@@ -1,69 +1,49 @@
 // C++ code
 
 int calibrationTime = 30;
+int ledPin = 7; // Pin for the LED
+int sensorPin = 13; // Pin for the sensor
+boolean flag = true; 
+long unsigned int time;
+long unsigned int pause = 5000; // 5 seconds pause
 
-long unsigned int lowIn;
-long unsigned int pause = 5000;
-boolean lockLow = true;
-boolean takeLowTime;
-int pirPin = 8;
-int ledPin = 7;
-void setup()
-{
+
+
+void setup() {  
   Serial.begin(9600);
-  pinMode(pirPin, INPUT);
   pinMode(ledPin, OUTPUT);
-  digitalWrite(pirPin, LOW);
-  Serial.print("Calibrating Sensor ");
-  for (int i = 0; i < calibrationTime; i++)
-  {
+  pinMode(sensorPin, INPUT);
+  digitalWrite(ledPin, LOW);
+  Serial.println("Starting calibration...");
+  for (int i = 0; i < calibrationTime; i++) {
     Serial.print(".");
     delay(1000);
   }
-  
-    Serial.println("\nDONE");
-    Serial.println("SENSOR ACTIVE");
-    delay(50);
-  
+  Serial.println("\nCalibration complete.");
+  Serial.println("Sensor is ready.");
 }
 
-void loop()
-{
-  if (digitalRead(pirPin) == HIGH)
-  {
+void loop() {
+  if (digitalRead(sensorPin) == HIGH) {
     digitalWrite(ledPin, HIGH);
-    if(lockLow)
-    { lockLow = false;
-     Serial.println("---");
-     Serial.println("Motion detected at ");
-     Serial.println(millis()/1000);
-     Serial.println("sec");
-     delay(50);
+    if (flag) {
+      flag = false;
+      time = millis()/1000; // Record the time in seconds
+      Serial.print("Sensor activated at: ");
+      Serial.print(time);
+      Serial.println(" seconds");
     }
-    takeLowTime = true;
-    
   }
-  
-  if (digitalRead(pirPin) == LOW)
-  {
+
+
+  if (digitalRead(sensorPin) == LOW && !flag && millis() - time * 1000 >= pause) {
+    flag = true; // Reset the flag
     digitalWrite(ledPin, LOW);
-    if(takeLowTime)
-    { 
-      lowIn = millis();
-      takeLowTime = false;
-    }
+    Serial.print("Sensor deactivated at: ");
+    Serial.print(millis() / 1000);
+    Serial.println(" seconds");
+    Serial.println("Waiting for next activation...");
   }
-  
- 
-    if(!lockLow && millis() - lowIn> pause)
-    { 
-     lockLow = true;
-     Serial.println("Motion ended at ");
-     Serial.println((millis() - pause) / 1000);
-     Serial.println("sec");
-     delay(50);
-    }
-    
-    
-  
+
+  delay(100); // Small delay to avoid bouncing issues
 }
